@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>News Bridge</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem;
+      line-height: 1.45;
+    }
+    h1 { margin-bottom: 0.3rem; }
+    form {
+      display: grid;
+      gap: 0.75rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      margin: 1rem 0 1.5rem;
+      align-items: end;
+    }
+    label { display: flex; flex-direction: column; gap: 0.3rem; font-weight: 600; }
+    input { padding: 0.45rem; font-size: 0.95rem; }
+    button {
+      padding: 0.6rem 0.8rem;
+      font-size: 0.95rem;
+      cursor: pointer;
+      min-height: 2.3rem;
+    }
+    .error {
+      border: 1px solid #d44;
+      background: rgba(220, 80, 80, 0.12);
+      color: #b00020;
+      padding: 0.75rem;
+      border-radius: 6px;
+      margin-bottom: 1rem;
+    }
+    .card {
+      border: 1px solid #bdbdbd;
+      border-radius: 8px;
+      padding: 0.9rem;
+      margin-bottom: 0.9rem;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: #e6e6e6;
+      color: #222;
+      font-size: 0.82rem;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
+    .meta { color: #555; margin-bottom: 0.5rem; }
+    .article { margin: 0.4rem 0; }
+  </style>
+</head>
+<body>
+  <h1>News Bridge</h1>
+  <p>Compare English and Chinese reporting on similar events using ChatGPT.</p>
+
+  {% if error %}
+    <div class="error">{{ error }}</div>
+  {% endif %}
+
+  <form action="/analyze" method="post">
+    <label>
+      English limit/source
+      <input type="number" min="1" name="english_limit" value="{{ defaults.english_limit }}" required>
+    </label>
+    <label>
+      Chinese limit/source
+      <input type="number" min="1" name="chinese_limit" value="{{ defaults.chinese_limit }}" required>
+    </label>
+    <label>
+      Max pairs
+      <input type="number" min="1" name="max_pairs" value="{{ defaults.max_pairs }}" required>
+    </label>
+    <label>
+      Model
+      <input type="text" name="model" value="{{ defaults.model }}" required>
+    </label>
+    <label>
+      OpenAI API key (optional if OPENAI_API_KEY is set)
+      <input type="password" name="api_key" value="{{ defaults.api_key }}">
+    </label>
+    <button type="submit">Run analysis</button>
+  </form>
+
+  {% if results is not none %}
+    <h2>Results ({{ results|length }})</h2>
+    {% if not results %}
+      <p>No article pairs were generated for this run.</p>
+    {% endif %}
+    {% for result in results %}
+      <div class="card">
+        <div>
+          <strong>{{ result.english_article.source.name }}</strong>
+          <span class="badge">English</span>
+          vs
+          <strong>{{ result.chinese_article.source.name }}</strong>
+          <span class="badge">Chinese</span>
+        </div>
+        <div class="meta">Same event: <strong>{{ "Yes" if result.same_event else "Unsure / No" }}</strong></div>
+        <div class="article"><strong>English:</strong> <a href="{{ result.english_article.link }}">{{ result.english_article.title }}</a></div>
+        <div class="article"><strong>Chinese:</strong> <a href="{{ result.chinese_article.link }}">{{ result.chinese_article.title }}</a></div>
+        <p><strong>Framing differences:</strong> {{ result.framing_comparison or "(none provided)" }}</p>
+        <p><strong>Notes:</strong> {{ result.notes or "(none provided)" }}</p>
+      </div>
+    {% endfor %}
+  {% endif %}
+</body>
+</html>
